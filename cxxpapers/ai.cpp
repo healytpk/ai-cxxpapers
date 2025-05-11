@@ -11,7 +11,14 @@ std::string model_path = "/var/snap/ollama/common/models/blobs/sha256-6340dc3229
 int g_ngl = 99;
 int g_n_ctx = 2048;
 
-int main(void)
+static llama_model       *model = nullptr;  // Auto( llama_model_free(model) );
+static llama_sampler     *smpl  = nullptr;  // Auto( llama_sampler_free(smpl) );
+static llama_context     *ctx   = nullptr;  // Auto( llama_free(ctx) );
+static llama_vocab const *vocab = nullptr;
+
+namespace ai {
+
+bool Init(void)
 {
     // only print errors
     llama_log_set([](enum ggml_log_level level, char const *const text, void*)
@@ -24,41 +31,49 @@ int main(void)
     llama_model_params model_params = llama_model_default_params();
     model_params.n_gpu_layers = g_ngl;
 
-    llama_model *const model = llama_model_load_from_file(model_path.c_str(), model_params);
+    model = llama_model_load_from_file(model_path.c_str(), model_params);
     if ( nullptr == model )
     {
         fprintf(stderr , "%s: error: unable to load model\n" , __func__);
-        return EXIT_FAILURE;
+        return false;
     }
-    Auto( llama_model_free(model) );
 
-    llama_vocab const *const vocab = llama_model_get_vocab(model);
+    vocab = llama_model_get_vocab(model);
+    if ( nullptr == vocab )
+    {
+        fprintf(stderr , "%s: error: unable to get vocabulary from model\n" , __func__);
+        return false;
+    }
 
     // initialize the context
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx   = g_n_ctx;
     ctx_params.n_batch = g_n_ctx;
 
-    llama_context *const ctx = llama_init_from_model(model, ctx_params);
+    ctx = llama_init_from_model(model, ctx_params);
     if ( nullptr == ctx )
     {
         fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__);
-        return EXIT_FAILURE;
+        return false;
     }
-    Auto( llama_free(ctx) );
 
     // initialize the sampler
-    llama_sampler *const smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
+    smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
     if ( nullptr == smpl )
     {
         fprintf(stderr , "%s: error: failed to create the llama_sampler\n" , __func__);
-        return EXIT_FAILURE;
+        return false;
     }
-    Auto( llama_sampler_free(smpl) );
+
     llama_sampler_chain_add(smpl, llama_sampler_init_min_p(0.05f, 1));
     llama_sampler_chain_add(smpl, llama_sampler_init_temp(0.8f));
     llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
+    return true;
+}
+
+int OtherFunction(void)
+{
     // helper function to evaluate a prompt and generate a response
     auto generate = [&](const std::string & prompt)
       {
@@ -165,4 +180,8 @@ int main(void)
             return EXIT_FAILURE;
         }
     }
+
+    return 0;
+}
+
 }
