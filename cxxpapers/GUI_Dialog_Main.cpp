@@ -1,20 +1,20 @@
 #include "GUI_Dialog_Main.hpp"
 
-#include <cassert>  // assert
-#include <cstddef>  // size_t
-#include <cstring>  // strcmp, strstr
-#include <string>   // string
-#include <vector>   // vector
-#include <filesystem>  // directory_iterator
-#include <thread>      // jthread
-
-#include <wx/app.h>     // wxApp
-#include <wx/msgdlg.h>  // wxMessageBox
+#include <cassert>                                   // assert
+#include <cstddef>                                   // size_t
+#include <cstring>                                   // strcmp, strstr
+#include <string>                                    // string
+#include <vector>                                    // vector
+#include <thread>                                    // jthread
+#include <wx/app.h>                                  // wxApp
+#include <wx/msgdlg.h>                               // wxMessageBox
 
 #include "GUI_Dialog_Waiting.hpp"
 #include "ai.hpp"
 
 Dialog_Main *g_p_dlgmain = nullptr;
+
+AImanager g_aimanager;
 
 class App_CxxPapers : public wxApp {
 public:
@@ -23,17 +23,6 @@ public:
     {
         wxThread::SetConcurrency(2u);
 
-        Dialog_Waiting &dlg = *new Dialog_Waiting(nullptr, "Loading the artificial intelligence model. . .");
-        dlg.m_gauge->SetRange(100u);
-        dlg.m_gauge->Hide();
-
-        std::jthread mythread([&]
-          {
-              ai::Init();
-              dlg.CallAfter( &Dialog_Waiting::CallAfter_Destroy );
-          });
-
-        dlg.ShowModal();
         RecreateGUI();
 
         return true;
@@ -75,3 +64,31 @@ void Dialog_Main::OnClose(wxCloseEvent& event)
 {
     this->Destroy();
 }
+
+void Dialog_Main::btnLoadModel_OnButtonClick(wxCommandEvent&)
+{
+    Dialog_Waiting &dlg = *new Dialog_Waiting(nullptr, "Loading the artificial intelligence model. . .");
+    dlg.m_gauge->SetRange(100u);
+    dlg.m_gauge->Hide();
+
+    std::atomic_bool model_is_loaded{false};
+
+    std::jthread mythread([&dlg,&model_is_loaded]
+      {
+          model_is_loaded = g_aimanager.Init();
+          dlg.CallAfter( &Dialog_Waiting::CallAfter_Destroy );
+      });
+
+    dlg.ShowModal();
+
+    this->btnLoadModel  ->Enable( ! model_is_loaded );
+    this->btnUnloadModel->Enable(   model_is_loaded );
+}
+
+void Dialog_Main::btnUnloadModel_OnButtonClick(wxCommandEvent&)
+{
+    g_aimanager.Reset();
+    this->btnLoadModel  ->Enable( true  );
+    this->btnUnloadModel->Enable( false );
+}
+
