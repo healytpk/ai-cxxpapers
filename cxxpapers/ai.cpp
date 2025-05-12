@@ -1,25 +1,40 @@
+#include "ai.hpp"
+#include <cassert>                  // assert
 #include <cstdio>
 #include <cstdlib>                  // EXIT_FAILURE
 #include <cstring>
-#include <iostream>
-#include <string>
-#include <vector>
+#include <iostream>                 // cin   ------------------------------------- REMOVE THIS
+#include <string>                   // string
+#include <vector>                   // vector
 #include "llama.h"
 #include "Auto.h"
 
-std::string model_path = "/var/snap/ollama/common/models/blobs/sha256-6340dc3229b0d08ea9cc49b75d4098702983e17b4c096d57afbbf2ffc813f2be";
-int g_ngl = 99;
-int g_n_ctx = 2048;
+using std::string, std::vector;
 
-static llama_model       *model = nullptr;  // Auto( llama_model_free(model) );
-static llama_sampler     *smpl  = nullptr;  // Auto( llama_sampler_free(smpl) );
-static llama_context     *ctx   = nullptr;  // Auto( llama_free(ctx) );
-static llama_vocab const *vocab = nullptr;
+constexpr char model_path[] = "/var/snap/ollama/common/models/blobs/sha256-6340dc3229b0d08ea9cc49b75d4098702983e17b4c096d57afbbf2ffc813f2be";
 
-namespace ai {
-
-bool Init(void)
+void AImanager::Reset(void)
 {
+    std::lock_guard mylock( this->mtx );  // might throw if mutex malfunctions
+
+    try { if ( smpl  ) llama_sampler_free(smpl ); } catch(...){}
+    try { if ( ctx   ) llama_free        (ctx  ); } catch(...){}
+    try { if ( model ) llama_model_free  (model); } catch(...){}
+
+    smpl  = nullptr;
+    ctx   = nullptr;
+    model = nullptr;
+}
+
+AImanager::~AImanager(void) noexcept
+{
+    try { this->Reset(); } catch(...) {}
+}
+
+bool AImanager::Init(void)
+{
+    std::lock_guard mylock( this->mtx );
+
     // only print errors
     llama_log_set([](enum ggml_log_level level, char const *const text, void*)
       {
@@ -29,9 +44,9 @@ bool Init(void)
     ggml_backend_load_all();
 
     llama_model_params model_params = llama_model_default_params();
-    model_params.n_gpu_layers = g_ngl;
+    model_params.n_gpu_layers = m_ngl;
 
-    model = llama_model_load_from_file(model_path.c_str(), model_params);
+    model = llama_model_load_from_file(model_path, model_params);
     if ( nullptr == model )
     {
         fprintf(stderr , "%s: error: unable to load model\n" , __func__);
@@ -47,8 +62,8 @@ bool Init(void)
 
     // initialize the context
     llama_context_params ctx_params = llama_context_default_params();
-    ctx_params.n_ctx   = g_n_ctx;
-    ctx_params.n_batch = g_n_ctx;
+    ctx_params.n_ctx   = m_n_ctx;
+    ctx_params.n_batch = m_n_ctx;
 
     ctx = llama_init_from_model(model, ctx_params);
     if ( nullptr == ctx )
@@ -72,18 +87,20 @@ bool Init(void)
     return true;
 }
 
-int OtherFunction(void)
+int AImanager::OtherFunction(void)
 {
+    std::lock_guard mylock( this->mtx );
+
     // helper function to evaluate a prompt and generate a response
-    auto generate = [&](const std::string & prompt)
+    auto generate = [&](const string & prompt)
       {
-        std::string response;
+        string response;
 
         bool const is_first = (0 == llama_kv_self_used_cells(ctx));
 
         // tokenize the prompt
         int const n_prompt_tokens = -llama_tokenize(vocab, prompt.c_str(), prompt.size(), NULL, 0, is_first, true);
-        std::vector<llama_token> prompt_tokens(n_prompt_tokens);
+        vector<llama_token> prompt_tokens(n_prompt_tokens);
         if (llama_tokenize(vocab, prompt.c_str(), prompt.size(), prompt_tokens.data(), prompt_tokens.size(), is_first, true) < 0) GGML_ABORT("failed to tokenize the prompt\n");
 
         // prepare a batch for the prompt
@@ -114,7 +131,7 @@ int OtherFunction(void)
             int const n = llama_token_to_piece(vocab, new_token_id, buf, sizeof(buf), 0, true);
             if (n < 0) GGML_ABORT("failed to convert token to piece\n");
 
-            std::string piece(buf, n);
+            string piece(buf, n);
             printf("%s", piece.c_str());
             fflush(stdout);
             response += piece;
@@ -126,7 +143,7 @@ int OtherFunction(void)
         return response;
     };
 
-    class vector_llama_chat_message : public std::vector<llama_chat_message> {
+    class vector_llama_chat_message : public vector<llama_chat_message> {
     public:
         ~vector_llama_chat_message(void) noexcept
         {
@@ -136,13 +153,13 @@ int OtherFunction(void)
     };
 
     vector_llama_chat_message messages;
-    std::vector<char> formatted( llama_n_ctx(ctx) );
+    vector<char> formatted( llama_n_ctx(ctx) );
     int prev_len = 0;
     for (; /* ever */ ;)
     {
         // get user input
         printf("\033[32m> \033[0m");
-        std::string user;
+        string user;
         std::getline(std::cin, user);
 
         if ( user.empty() ) break;
@@ -164,11 +181,11 @@ int OtherFunction(void)
         }
 
         // remove previous messages to obtain the prompt to generate the response
-        std::string prompt(formatted.begin() + prev_len, formatted.begin() + new_len);
+        string prompt(formatted.begin() + prev_len, formatted.begin() + new_len);
 
         // generate a response
         printf("\033[33m");
-        std::string response = generate(prompt);
+        string response = generate(prompt);
         printf("\n\033[0m");
 
         // add the response to the messages
@@ -182,6 +199,4 @@ int OtherFunction(void)
     }
 
     return 0;
-}
-
 }
