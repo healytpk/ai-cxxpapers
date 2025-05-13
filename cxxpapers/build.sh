@@ -9,6 +9,8 @@ if [ ! -d ../build ]; then
     cd -
 fi
 
+g++ -o chunker -x c++ chunker.cpp.STANDALONE -x none -std=c++23 -static-libstdc++ -static-libgcc -lsentencepiece
+
 g++ -o embed -x c++ embedding.cpp.STANDALONE -x none -std=c++23 \
     -static-libstdc++ -static-libgcc           \
     -I../include/ -I../ggml/include/ -I../common/ \
