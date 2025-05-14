@@ -66,6 +66,17 @@ llama-batched-swift
 out/
 tmp/
 autogen-*.md
+CMakeFiles/
+CTestTestfile.cmake
+Makefile
+cmake_install.cmake
+CMakeCache.txt
+ggml/ggml-config.cmake
+ggml/ggml-version.cmake
+tests/CTestTestfile.cmake
+tests/cmake_install.cmake
+llama.pc
+DartConfiguration.tcl
 
 # Deprecated
 
