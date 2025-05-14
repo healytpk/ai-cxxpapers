@@ -3,12 +3,15 @@
 #include <cstdlib>                    // EXIT_FAILURE
 #include <filesystem>                 // directory_iterator, path
 #include <fstream>                    // ifstream, ofstream
+#include <functional>                 // function
 #include <iostream>                   // cerr
 #include <memory>                     // unique_ptr
 #include <sstream>                    // ostringstream
 #include <string>                     // string, getline
 #include <utility>                    // move
 #include <vector>                     // vector
+#include <cmark-gfm.h>                // cmark_render_plaintext
+#include <gumbo.h>                    // GumboOutput, gumbo_parse
 #include <poppler-document.h>         // poppler::document
 #include <poppler-page.h>             // poppler::page
 #include "llama.h"                    // llama_* APIs
@@ -74,8 +77,138 @@ string GetPlainText_PDF(fs::path const &path)
     return retval;
 }
 
-string GetPlainText_HTML(fs::path const &path) { return {}; }
-string GetPlainText_MD  (fs::path const &path) { return {}; }
+string GetPlainText_HTML(fs::path const &path)
+{
+    logfile << "++++ Converting HTML to plain text: " << path.string() << std::endl;
+
+    std::ifstream file(path);
+    if ( !file )
+    {
+        logfile << "-------------------- Failed to open HTML file: " << path << std::endl;
+        return {};
+    }
+
+    ostringstream buffer;
+    buffer << file.rdbuf();
+    string const html = std::move(buffer).str();
+
+    GumboOutput *const output = gumbo_parse( html.c_str() );
+    if ( nullptr == output ) return {};
+    Auto( gumbo_destroy_output(&kGumboDefaultOptions, output) );
+
+    ostringstream text_out;
+
+    std::function<void(const GumboNode *)> extract_text;
+    extract_text = [&](const GumboNode *node)
+      {
+        if ( node->type == GUMBO_NODE_TEXT )
+        {
+            text_out << node->v.text.text << ' ';
+        }
+        else if ( node->type == GUMBO_NODE_ELEMENT )
+        {
+            GumboTag tag = node->v.element.tag;
+
+            // Skip non-visible content
+            if (tag == GUMBO_TAG_SCRIPT ||
+                tag == GUMBO_TAG_STYLE ||
+                tag == GUMBO_TAG_HEAD ||
+                tag == GUMBO_TAG_META ||
+                tag == GUMBO_TAG_NOSCRIPT)
+            {
+                return;
+            }
+
+            GumboVector const *const children = &node->v.element.children;
+            for ( unsigned i = 0u; i < children->length; ++i)
+            {
+                extract_text(static_cast<GumboNode *>(children->data[i]));
+            }
+
+            // Add a newline after block-level elements to improve formatting
+            if (tag == GUMBO_TAG_P ||
+                tag == GUMBO_TAG_DIV ||
+                tag == GUMBO_TAG_BR ||
+                tag == GUMBO_TAG_SECTION ||
+                tag == GUMBO_TAG_ARTICLE ||
+                tag == GUMBO_TAG_H1 || tag == GUMBO_TAG_H2 || tag == GUMBO_TAG_H3 ||
+                tag == GUMBO_TAG_H4 || tag == GUMBO_TAG_H5 || tag == GUMBO_TAG_H6)
+            {
+                text_out << '\n';
+            }
+        }
+        else if ( node->type == GUMBO_NODE_WHITESPACE )
+        {
+            text_out << ' ';
+        }
+      };
+
+    extract_text(output->root);
+
+    string const result = text_out.str();
+
+    string const newfilename = path.string() + ".pretokens";
+    ofstream out(newfilename);
+    if (out)
+    {
+        out << result;
+    }
+    else
+    {
+        logfile << "-------------------- Failed to write pre-token output: " << newfilename << std::endl;
+    }
+
+    return result;
+}
+
+string GetPlainText_MD(fs::path const &path)
+{
+    logfile << "++++ Converting Markdown to plain text via cmark: " << path.string() << endl;
+
+    ifstream file(path);
+    if ( !file )
+    {
+        logfile << "-------------------- Failed to open file: " << path << endl;
+        return {};
+    }
+
+    ostringstream buffer;
+    buffer << file.rdbuf();
+    string markdown = std::move(buffer).str();
+
+    // Convert to CommonMark AST
+    cmark_node *doc = cmark_parse_document(markdown.c_str(), markdown.length(), CMARK_OPT_DEFAULT);
+    if ( nullptr == doc )
+    {
+        logfile << "-------------------- Failed to parse Markdown document\n";
+        return {};
+    }
+    Auto( cmark_node_free(doc) );
+
+    // Render as plain text
+    string retval;
+    char const *const plain = cmark_render_plaintext(doc, CMARK_OPT_DEFAULT, 80);
+    if ( nullptr == plain )
+    {
+        logfile << "-------------------- Failed to render Markdown as plain text\n";
+        return {};
+    }
+    Auto( std::free( const_cast<char*>(plain) ) );
+    retval = plain;
+
+    string const newfilename = path.string() + ".pretokens";
+    ofstream out(newfilename);
+    if ( out )
+    {
+        out << retval;
+    }
+    else
+    {
+        logfile << "-------------------- Failed to write pre-token output: " << newfilename << endl;
+    }
+
+    return retval;
+}
 
 int main(int const argc, char **const argv)
 {
@@ -211,8 +344,8 @@ int main(int const argc, char **const argv)
             }
         }
 
-        fs::path const out_path = path;
-        string const out_name = path.string() + ".tokens";
+        fs::path out_path = path;
+        string const out_name = out_path.replace_extension(".tokens").string();
         std::ofstream out(out_name, std::ios::binary);
         if ( ! out )
         {
