@@ -1,3 +1,6 @@
+#ifndef HEADER_INCLUSION_GUARD_6986124654685656549598674325825449489
+#define HEADER_INCLUSION_GUARD_6986124654685656549598674325825449489
+
 #include <mutex>                       // mutex
 
 struct llama_context;
@@ -25,3 +28,5 @@ public:
     void Reset(void);
     int OtherFunction(void);
 };
+
+#endif
