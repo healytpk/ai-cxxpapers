@@ -54,24 +54,24 @@ Dialog_Main__Auto_Base_Class::Dialog_Main__Auto_Base_Class( wxWindow* parent, wx
 	m_staticText1->Wrap( -1 );
 	bSizer1->Add( m_staticText1, 0, wxALL, 5 );
 
-	m_textCtrl1 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,100 ), wxTE_MULTILINE );
-	bSizer1->Add( m_textCtrl1, 0, wxALL|wxEXPAND, 5 );
+	txtBooleanQuestion = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,100 ), wxTE_MULTILINE );
+	bSizer1->Add( txtBooleanQuestion, 0, wxALL|wxEXPAND, 5 );
 
-	m_button1 = new wxButton( this, wxID_ANY, _("Next"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_button1, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
+	btnWhittleDownPapers = new wxButton( this, wxID_ANY, _("Next"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer1->Add( btnWhittleDownPapers, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 
-	m_listCtrl1 = new wxListCtrl( this, wxID_ANY, wxDefaultPosition, wxSize( -1,200 ), wxLC_REPORT );
-	bSizer1->Add( m_listCtrl1, 0, wxALL|wxEXPAND, 5 );
+	lcPapers = new wxListCtrl( this, wxID_ANY, wxDefaultPosition, wxSize( -1,200 ), wxLC_REPORT );
+	bSizer1->Add( lcPapers, 0, wxALL|wxEXPAND, 5 );
 
 	m_staticText2 = new wxStaticText( this, wxID_ANY, _("More detailed question to ask for each of the above papers:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText2->Wrap( -1 );
 	bSizer1->Add( m_staticText2, 0, wxALL, 5 );
 
-	m_textCtrl2 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,80 ), wxTE_MULTILINE );
-	bSizer1->Add( m_textCtrl2, 0, wxALL|wxEXPAND, 5 );
+	txtDetailedQuestion = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,80 ), wxTE_MULTILINE );
+	bSizer1->Add( txtDetailedQuestion, 0, wxALL|wxEXPAND, 5 );
 
-	m_button2 = new wxButton( this, wxID_ANY, _("Ask"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_button2, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
+	btnAnalysePapers = new wxButton( this, wxID_ANY, _("Ask"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer1->Add( btnAnalysePapers, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 
 	m_staticText3 = new wxStaticText( this, wxID_ANY, _("Responses:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText3->Wrap( -1 );
@@ -80,11 +80,11 @@ Dialog_Main__Auto_Base_Class::Dialog_Main__Auto_Base_Class( wxWindow* parent, wx
 	wxBoxSizer* bSizer2;
 	bSizer2 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_listBox1 = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	bSizer2->Add( m_listBox1, 1, wxALL|wxEXPAND, 5 );
+	listPapers = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	bSizer2->Add( listPapers, 1, wxALL|wxEXPAND, 5 );
 
-	m_textCtrl3 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
-	bSizer2->Add( m_textCtrl3, 1, wxALL|wxEXPAND, 5 );
+	txtDetailedAnswer = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
+	bSizer2->Add( txtDetailedAnswer, 1, wxALL|wxEXPAND, 5 );
 
 
 	bSizer1->Add( bSizer2, 1, wxEXPAND, 5 );
@@ -100,6 +100,8 @@ Dialog_Main__Auto_Base_Class::Dialog_Main__Auto_Base_Class( wxWindow* parent, wx
 	btnLoadModel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnLoadModel_OnButtonClick ), NULL, this );
 	btnUnloadModel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnUnloadModel_OnButtonClick ), NULL, this );
 	btnLoadPapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnLoadPapers_OnButtonClick ), NULL, this );
+	btnWhittleDownPapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnWhittleDownPapers_OnButtonClick ), NULL, this );
+	btnAnalysePapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnAnalysePapers_OnButtonClick ), NULL, this );
 }
 
 Dialog_Main__Auto_Base_Class::~Dialog_Main__Auto_Base_Class()

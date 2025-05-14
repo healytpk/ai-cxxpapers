@@ -1,7 +1,9 @@
 #ifndef HEADER_INCLUSION_GUARD_6986124654685656549598674325825449489
 #define HEADER_INCLUSION_GUARD_6986124654685656549598674325825449489
 
+#include <cstdint>                     // int32_t
 #include <mutex>                       // mutex
+#include <vector>                      // vector
 
 struct llama_context;
 struct llama_model;
@@ -27,6 +29,8 @@ public:
     bool Init(void);
     void Reset(void);
     int OtherFunction(void);
+    void ForgetEverything(void) noexcept;
+    void LoadInTokens(std::vector<std::int32_t> const *);
 };
 
 #endif

@@ -200,3 +200,33 @@ int AImanager::OtherFunction(void)
 
     return 0;
 }
+
+void AImanager::ForgetEverything(void) noexcept
+{
+    std::lock_guard mylock( this->mtx );
+
+    if ( ctx )
+    {
+        llama_free(ctx);
+        ctx = nullptr;
+    }
+
+    llama_context_params ctx_params = llama_context_default_params();
+    ctx_params.n_ctx   = m_n_ctx;
+    ctx_params.n_batch = m_n_ctx;
+
+    ctx = llama_init_from_model(model, ctx_params);
+}
+
+void AImanager::LoadInTokens(vector<int32_t> const *const pvec)
+{
+    std::lock_guard mylock( this->mtx );
+
+    assert( nullptr != this->ctx );
+
+    for ( auto const t : *pvec )
+    {
+         struct llama_batch mybatch = llama_batch_get_one( const_cast<int32_t*>(&pvec->front()), pvec->size() );
+         llama_decode( this->ctx, mybatch );
+    }
+}
