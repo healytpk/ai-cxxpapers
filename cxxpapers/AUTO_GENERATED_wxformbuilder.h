@@ -40,6 +40,9 @@ class Dialog_Main__Auto_Base_Class : public wxDialog
 		wxButton* btnLoadModel;
 		wxButton* btnUnloadModel;
 		wxStaticLine* m_staticline1;
+		wxButton* btnLoadPapers;
+		wxButton* btnUnloadPapers;
+		wxStaticLine* m_staticline2;
 		wxStaticText* m_staticText1;
 		wxTextCtrl* m_textCtrl1;
 		wxButton* m_button1;
@@ -55,6 +58,7 @@ class Dialog_Main__Auto_Base_Class : public wxDialog
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void btnLoadModel_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void btnUnloadModel_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void btnLoadPapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

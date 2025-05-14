@@ -10,6 +10,7 @@ public:
 	Dialog_Main( wxWindow *parent );
     void btnLoadModel_OnButtonClick(wxCommandEvent&) override;
     void btnUnloadModel_OnButtonClick(wxCommandEvent&) override;
+    void btnLoadPapers_OnButtonClick(wxCommandEvent&) override;
 };
 
 extern Dialog_Main *g_p_dlgmain;
