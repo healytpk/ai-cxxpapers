@@ -44,21 +44,23 @@ class Dialog_Main__Auto_Base_Class : public wxDialog
 		wxButton* btnUnloadPapers;
 		wxStaticLine* m_staticline2;
 		wxStaticText* m_staticText1;
-		wxTextCtrl* m_textCtrl1;
-		wxButton* m_button1;
-		wxListCtrl* m_listCtrl1;
+		wxTextCtrl* txtBooleanQuestion;
+		wxButton* btnWhittleDownPapers;
+		wxListCtrl* lcPapers;
 		wxStaticText* m_staticText2;
-		wxTextCtrl* m_textCtrl2;
-		wxButton* m_button2;
+		wxTextCtrl* txtDetailedQuestion;
+		wxButton* btnAnalysePapers;
 		wxStaticText* m_staticText3;
-		wxListBox* m_listBox1;
-		wxTextCtrl* m_textCtrl3;
+		wxListBox* listPapers;
+		wxTextCtrl* txtDetailedAnswer;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void btnLoadModel_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void btnUnloadModel_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void btnLoadPapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void btnWhittleDownPapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void btnAnalysePapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

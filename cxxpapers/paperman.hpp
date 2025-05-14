@@ -35,7 +35,7 @@ public:
 
     void LoadAllTokensFromAllPapers(void) noexcept(false);
 
-    std::size_t count(void) const noexcept { return this->tokens.size(); }
+    std::size_t size(void) const noexcept { return this->tokens.size(); }
 
     std::pair< Paper, std::vector< std::int32_t > const * >GetPaper(std::size_t);
 };

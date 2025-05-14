@@ -120,3 +120,36 @@ void Dialog_Main::btnUnloadModel_OnButtonClick(wxCommandEvent&)
     this->btnUnloadModel->Enable( false );
 }
 
+void Dialog_Main::btnWhittleDownPapers_OnButtonClick(wxCommandEvent&)
+{
+    Dialog_Waiting &dlg = *new Dialog_Waiting(nullptr, "Whittling down the list of papers. . .");
+    dlg.m_gauge->SetRange( g_paperman.size() );
+    //dlg.m_gauge->Hide();
+
+    std::atomic_bool is_loaded{false};
+
+    std::jthread mythread([&dlg,&is_loaded]
+      {
+          try
+          {
+              g_aimanager.ForgetEverything();
+              for ( unsigned i = 0u; i < g_paperman.size(); ++i )
+              {
+                  auto const [paper, ptokens] = g_paperman.GetPaper(i);
+                  g_aimanager.LoadInTokens(ptokens);
+                  dlg.CallAfter( &Dialog_Waiting::CallAfter_Increment );
+              }
+              is_loaded = true;
+          }
+          catch(...) {}
+
+          dlg.CallAfter( &Dialog_Waiting::CallAfter_Destroy );
+      });
+
+    dlg.ShowModal();
+
+    this->btnLoadPapers  ->Enable( ! is_loaded );
+    this->btnUnloadPapers->Enable(   is_loaded );
+}
+
+
