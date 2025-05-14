@@ -87,6 +87,32 @@ void Dialog_Main::btnLoadModel_OnButtonClick(wxCommandEvent&)
     this->btnUnloadModel->Enable(   model_is_loaded );
 }
 
+void Dialog_Main::btnLoadPapers_OnButtonClick(wxCommandEvent&)
+{
+    Dialog_Waiting &dlg = *new Dialog_Waiting(nullptr, "Loading the thousands of C++ papers. . .");
+    dlg.m_gauge->SetRange(100u);
+    dlg.m_gauge->Hide();
+
+    std::atomic_bool is_loaded{false};
+
+    std::jthread mythread([&dlg,&is_loaded]
+      {
+          try
+          {
+              g_paperman.LoadAllTokensFromAllPapers();
+              is_loaded = true;
+          }
+          catch(...) {}
+
+          dlg.CallAfter( &Dialog_Waiting::CallAfter_Destroy );
+      });
+
+    dlg.ShowModal();
+
+    this->btnLoadPapers  ->Enable( ! is_loaded );
+    this->btnUnloadPapers->Enable(   is_loaded );
+}
+
 void Dialog_Main::btnUnloadModel_OnButtonClick(wxCommandEvent&)
 {
     g_aimanager.Reset();
