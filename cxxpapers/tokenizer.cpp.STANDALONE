@@ -1,0 +1,232 @@
+#include <cstddef>                    // size_t
+#include <cstdint>                    // int32_t
+#include <cstdlib>                    // EXIT_FAILURE
+#include <filesystem>                 // directory_iterator, path
+#include <fstream>                    // ifstream, ofstream
+#include <iostream>                   // cerr
+#include <memory>                     // unique_ptr
+#include <sstream>                    // ostringstream
+#include <string>                     // string, getline
+#include <utility>                    // move
+#include <vector>                     // vector
+#include <poppler-document.h>         // poppler::document
+#include <poppler-page.h>             // poppler::page
+#include "llama.h"                    // llama_* APIs
+#include "Auto.h"                     // The 'Auto' macro
+
+constexpr char model_path[] = "/var/snap/ollama/common/models/blobs/sha256-6340dc3229b0d08ea9cc49b75d4098702983e17b4c096d57afbbf2ffc813f2be";
+
+using std::cerr;
+using std::endl;
+using std::int32_t;
+using std::ifstream;
+using std::ofstream;
+using std::ostringstream;
+using std::size_t;
+using std::string;
+using std::unique_ptr;
+using std::vector;
+namespace fs = std::filesystem;
+
+template<typename T>
+inline float megabytes(T &&vec, size_t s = -1)
+{
+    if ( -1 == s ) s = vec.size();
+    float retval = static_cast<float>(s);
+    retval *= sizeof( vec.front() );
+    retval /= 1024.0f;  // kilobytes
+    retval /= 1024.0f;  // megabytes
+    return retval;
+}
+
+ofstream logfile;
+
+string GetPlainText_PDF(fs::path const &path)
+{
+    logfile << "++++ Converting input file to plain text (in memory): " << path.string() << endl;
+
+    using poppler::document;
+    using poppler::page;
+
+    unique_ptr<document> doc( document::load_from_file(path.string()) );
+
+    if ( nullptr == doc ) return {};
+
+    int const num_pages = doc->pages();  /* Yes, pages() returns an int */
+    string retval;
+    for ( int i = 0; i < num_pages; ++i )
+    {
+        unique_ptr<page> p(  doc->create_page(i)  );
+        if ( p ) retval += p->text().to_latin1();
+    }
+
+    string const newfilename = path.string() + ".pretokens";
+    std::ofstream f(newfilename);
+    if ( f )
+    {
+        f << retval;
+    }
+    else
+    {
+        logfile << "------------------- Failed to create pre-tokens file: " << newfilename << endl;
+    }
+
+    return retval;
+}
+
+string GetPlainText_HTML(fs::path const &path) { return {}; }
+string GetPlainText_MD  (fs::path const &path) { return {}; }
+
+int main(int const argc, char **const argv)
+{
+    if ( 2 != argc )
+    {
+        cerr << "Usage: " << argv[0] << " <directory containing text files>\n";
+        return EXIT_FAILURE;
+    }
+
+    cerr << "Attempting to create 'log.txt' in current directory. . .\n";
+    logfile.open("log.txt");
+    if ( ! logfile )
+    {
+        std::cerr << "Failed to create file 'logfile.txt' in current directory\n";
+        return EXIT_FAILURE;
+    }
+    logfile << "First line in log file\n";
+
+    fs::path const input_dir( argv[1] );
+
+    llama_backend_init();
+    Auto( llama_backend_free() );
+
+    llama_model_params const model_params = llama_model_default_params();
+    llama_model *const model = llama_model_load_from_file(model_path, model_params);
+    if ( nullptr == model )
+    {
+        std::cerr << "Failed to load model: " << model_path << endl;
+        return EXIT_FAILURE;
+    }
+    Auto( llama_model_free(model) );
+
+    llama_vocab const *const vocab = llama_model_get_vocab(model);
+    if ( nullptr == vocab )
+    {
+        std::cerr << "Failed to get vocabulary from model.\n";
+        return EXIT_FAILURE;
+    }
+
+    vector<llama_token> tokens;
+
+    for ( auto const &entry : fs::directory_iterator(input_dir) )
+    {
+        if ( false == entry.is_regular_file() ) continue;
+
+        fs::path const path = entry.path();
+
+        string text;
+
+        if ( ".tokens" == path.extension() ) continue;
+        else if ( ".pretokens" == path.extension() ) continue;
+        else if ( ".txt" == path.extension() )
+        {
+            ifstream file(path);
+
+            if ( ! file )
+            {
+                logfile << "-------------------- Failed to open input file: " << path << endl;
+                continue;
+            }
+
+            ostringstream buffer;
+            buffer << file.rdbuf();
+            text = std::move(buffer).str();
+        }
+        else if ( ".pdf" == path.extension() )
+        {
+            text = GetPlainText_PDF(path);
+        }
+        else if ( (".html" == path.extension()) || (".htm" == path.extension()) )
+        {
+            text = GetPlainText_HTML(path);
+        }
+        else if ( ".md" == path.extension() )
+        {
+            text = GetPlainText_MD(path);
+        }
+        else
+        {
+            logfile << "-------------------- Unrecognised input file type: " << path << endl;
+            continue;
+        }
+
+        if ( text.empty() )
+        {
+            logfile << "-------------------- Input file was empty after conversion to plain text: " << path << endl;
+            continue;
+        }
+
+        constexpr size_t factor = 4uz;
+
+        if ( text.size() >= ((0x7FFFFFFFuz / factor) + 1u) )
+        {
+            logfile << "-------------------- Input file is too big: " << path << "    ---- Size: " << megabytes(text) << " megabytes\n";
+            continue;
+        }
+
+        size_t const initial_guess = factor * text.size();
+
+        // Make sure the vector is large enough, but never shrink
+        if ( tokens.size() < initial_guess )
+        {
+            tokens.resize(initial_guess);
+            logfile << "-------- Resized token vector to: " << megabytes(tokens) << " megabytes\n";
+        }
+
+        auto tokenize = [&]()
+          {
+                return llama_tokenize(
+                  vocab,
+                  text.c_str(),
+                  static_cast<int32_t>(text.size()),
+                  &tokens.front(),
+                  static_cast<int32_t>(tokens.size()),
+                  true,          // add_special
+                  false          // parse_special
+                );
+          };
+
+        int32_t n_tokens = tokenize();
+
+        if ( n_tokens < 0 )
+        {
+            n_tokens = -n_tokens;
+            tokens.resize(n_tokens); // Resize for larger text
+
+            n_tokens = tokenize();
+
+            if ( n_tokens < 0 )
+            {
+                logfile << "-------------------- Failed to tokenize after resizing: " << path << endl;
+                continue;
+            }
+        }
+
+        fs::path const out_path = path;
+        string const out_name = path.string() + ".tokens";
+        std::ofstream out(out_name, std::ios::binary);
+        if ( ! out )
+        {
+            logfile << "-------------------- Failed to open output file: " << out_name << endl;
+            continue;
+        }
+
+        out.write( (char*)&tokens.front(), n_tokens * sizeof(tokens.front()) );
+        if ( ! out )
+        {
+            logfile << "-------------------- Failed to write to output file: " << out_name << endl;
+            continue;
+        }
+
+        logfile << "Wrote " << megabytes(tokens, n_tokens) << " megabytes to: " << out_name << endl;
+    }
+}
