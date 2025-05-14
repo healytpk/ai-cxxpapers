@@ -12,12 +12,14 @@ fi
 g++ -o tokenizer -x c++ tokenizer.cpp.STANDALONE -x none \
     -std=c++23 \
     -static-libstdc++ -static-libgcc           \
-    -I/usr/include/poppler/cpp \
-    -I../include/ -I../ggml/include/ -I../common/ \
-    ../build/common/libcommon.a ../build/src/libllama.a \
-    ../build/ggml/src/libggml.a ../build/ggml/src/libggml-cpu.a ../build/ggml/src/libggml-base.a \
+    -I/usr/include/poppler/cpp                 \
+    -I../include/ -I../ggml/include/           \
+    ../build/src/libllama.a                    \
+    ../build/ggml/src/libggml.a                \
+    ../build/ggml/src/libggml-cpu.a            \
+    ../build/ggml/src/libggml-base.a           \
     /usr/lib/gcc/x86_64-linux-gnu/13/libgomp.a \
-    -lpoppler-cpp
+    -lgumbo -lpoppler-cpp -lcmark-gfm
 
 g++ -o prog *.cpp                              \
     -std=c++23                                 \
