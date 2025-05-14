@@ -11,10 +11,12 @@
 
 #include "GUI_Dialog_Waiting.hpp"
 #include "ai.hpp"
+#include "paperman.hpp"
 
 Dialog_Main *g_p_dlgmain = nullptr;
 
 AImanager g_aimanager;
+PaperManager g_paperman("./paperfiles/papers/");
 
 class App_CxxPapers : public wxApp {
 public:
