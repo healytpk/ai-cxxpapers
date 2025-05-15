@@ -25,6 +25,8 @@
 #include <wx/textctrl.h>
 #include <wx/listctrl.h>
 #include <wx/listbox.h>
+#include <wx/panel.h>
+#include <wx/notebook.h>
 #include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -37,6 +39,8 @@ class Dialog_Main__Auto_Base_Class : public wxDialog
 	private:
 
 	protected:
+		wxNotebook* m_notebook1;
+		wxPanel* panelAI;
 		wxButton* btnLoadModel;
 		wxButton* btnUnloadModel;
 		wxStaticLine* m_staticline1;
@@ -53,6 +57,9 @@ class Dialog_Main__Auto_Base_Class : public wxDialog
 		wxStaticText* m_staticText3;
 		wxListBox* listPapers;
 		wxTextCtrl* txtDetailedAnswer;
+		wxPanel* panelXapian;
+		wxButton* btnXapianLoadPapers;
+		wxButton* btnUnloadPapers1;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
@@ -61,6 +68,7 @@ class Dialog_Main__Auto_Base_Class : public wxDialog
 		virtual void btnLoadPapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void btnWhittleDownPapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void btnAnalysePapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void btnXapianLoadPapers_OnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

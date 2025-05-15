@@ -178,6 +178,13 @@ public:
 
         this->displayed_seconds_on_screen = seconds_on_screen;
     }
+
+    void CallAfter_SetProgress(unsigned const n, unsigned const total)
+    {
+        assert( wxThread::IsMain() );  // This method should only be invoked from the GUI Thread
+        this->m_gauge->SetRange(total);
+        this->m_gauge->SetValue(n);
+    }
 };
 
 #endif // __GUI_Dialog_Waiting__

@@ -83,3 +83,11 @@ void PaperManager::LoadAllTokensFromAllPapers(void) noexcept(false)
         if ( ! f ) throw "Failed to read from token file";
     }
 }
+
+std::size_t PaperManager::TokenCount(std::size_t const i) noexcept
+{
+    assert( i < this->tokens.size() );
+    auto it = this->tokens.cbegin();
+    std::advance(it, i);
+    return it->second.size();
+}
