@@ -1,7 +1,7 @@
 #ifndef HEADER_INCLUSION_GUARD_152435324534432523636246673685785
 #define HEADER_INCLUSION_GUARD_152435324534432523636246673685785
 
-#include <cassert>                                 // assert
+#include <cstddef>                                 // size_t
 #include <cstdint>                                 // int32_t
 #include <filesystem>                              // path
 #include <map>                                     // map
@@ -9,19 +9,7 @@
 #include <string_view>                             // string_view
 #include <utility>                                 // pair
 #include <vector>                                  // vector
-
-struct Paper {
-
-    unsigned num, rev;
-
-    bool operator<(Paper const other) const noexcept
-    {
-        return (num < other.num) || ( (num == other.num) && (rev < other.rev) );
-    }
-
-    char const *str(void) const noexcept;
-};
-
+#include "paper.hpp"                               // Paper
 
 class PaperManager {
 protected:

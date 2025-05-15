@@ -1,11 +1,9 @@
 #include "paperman.hpp"
 #include <cassert>                                  // assert
-#include <cstddef>                                  // size_t
 #include <fstream>                                  // ifstream
 #include <iterator>                                 // advance
 #include <regex>                                    // regex_match
 #include <string>                                   // stoul, string
-#include <vector>                                   // vector
 
 using std::int32_t;
 using std::pair;
@@ -14,30 +12,6 @@ using std::string;
 using std::vector;
 
 namespace fs = std::filesystem;
-
-char const *Paper::str(void) const noexcept
-{
-    static thread_local char s[] = "PxxxxRxx";
-
-    s[1] = '0' + num / 1000u % 10u;
-    s[2] = '0' + num / 100u % 10u;
-    s[3] = '0' + num / 10u % 10u;
-    s[4] = '0' + num / 1u % 10u;
-
-    if ( rev < 10u )
-    {
-        s[6] = '0' + rev;
-        s[7] = '\0';
-    }
-    else
-    {
-        s[6] = '0' + rev / 10u % 10u;
-        s[7] = '0' + rev / 1u % 10u;
-        s[8] = '\0';
-    }
-
-    return s;
-}
 
 pair< Paper, vector< int32_t > const * > PaperManager::GetPaper( size_t const i )
 {
@@ -84,7 +58,7 @@ void PaperManager::LoadAllTokensFromAllPapers(void) noexcept(false)
     }
 }
 
-std::size_t PaperManager::TokenCount(std::size_t const i) noexcept
+size_t PaperManager::TokenCount(size_t const i) noexcept
 {
     assert( i < this->tokens.size() );
     auto it = this->tokens.cbegin();
