@@ -17,7 +17,7 @@
 #include "llama.h"                    // llama_* APIs
 #include "Auto.h"                     // The 'Auto' macro
 
-constexpr char model_path[] = "/var/snap/ollama/common/models/blobs/sha256-6340dc3229b0d08ea9cc49b75d4098702983e17b4c096d57afbbf2ffc813f2be";
+constexpr char model_path[] = "./deepseek.gguf";
 
 using std::cerr;
 using std::endl;
