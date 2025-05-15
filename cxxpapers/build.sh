@@ -30,7 +30,8 @@ g++ -o prog *.cpp                              \
     ../build/ggml/src/libggml.a                \
     ../build/ggml/src/libggml-cpu.a            \
     ../build/ggml/src/libggml-base.a           \
-    /usr/lib/gcc/x86_64-linux-gnu/13/libgomp.a
+    /usr/lib/gcc/x86_64-linux-gnu/13/libgomp.a \
+    -lxapian
 
 echo "Libraries needed by 'tokenizer': "
 readelf -a ./tokenizer | grep "(NEEDED)"

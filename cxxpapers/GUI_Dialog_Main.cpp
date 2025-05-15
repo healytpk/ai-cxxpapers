@@ -12,11 +12,13 @@
 #include "GUI_Dialog_Waiting.hpp"
 #include "ai.hpp"
 #include "paperman.hpp"
+#include "semantic.hpp"
 
 Dialog_Main *g_p_dlgmain = nullptr;
 
 AImanager g_aimanager;
 PaperManager g_paperman("./paperfiles/papers/");
+SemanticSearcher g_seman;
 
 class App_CxxPapers : public wxApp {
 public:
@@ -73,18 +75,19 @@ void Dialog_Main::btnLoadModel_OnButtonClick(wxCommandEvent&)
     dlg.m_gauge->SetRange(100u);
     dlg.m_gauge->Hide();
 
-    std::atomic_bool model_is_loaded{false};
+    std::atomic_bool is_loaded{false};
 
-    std::jthread mythread([&dlg,&model_is_loaded]
+    std::jthread mythread([&dlg,&is_loaded]
       {
-          model_is_loaded = g_aimanager.Init();
+          g_aimanager.Init();
+          is_loaded = true;
           dlg.CallAfter( &Dialog_Waiting::CallAfter_Destroy );
       });
 
     dlg.ShowModal();
 
-    this->btnLoadModel  ->Enable( ! model_is_loaded );
-    this->btnUnloadModel->Enable(   model_is_loaded );
+    this->btnLoadModel  ->Enable( ! is_loaded );
+    this->btnUnloadModel->Enable(   is_loaded );
 }
 
 void Dialog_Main::btnLoadPapers_OnButtonClick(wxCommandEvent&)
@@ -132,11 +135,12 @@ void Dialog_Main::btnWhittleDownPapers_OnButtonClick(wxCommandEvent&)
       {
           try
           {
-              g_aimanager.ForgetEverything();
               for ( unsigned i = 0u; i < g_paperman.size(); ++i )
               {
                   auto const [paper, ptokens] = g_paperman.GetPaper(i);
-                  g_aimanager.LoadInTokens(ptokens);
+                  size_t const token_count = g_paperman.TokenCount(i);
+                  g_aimanager.NewContext(token_count);
+                  g_aimanager.LoadInPaper(ptokens);
                   dlg.CallAfter( &Dialog_Waiting::CallAfter_Increment );
               }
               is_loaded = true;
@@ -150,6 +154,44 @@ void Dialog_Main::btnWhittleDownPapers_OnButtonClick(wxCommandEvent&)
 
     this->btnLoadPapers  ->Enable( ! is_loaded );
     this->btnUnloadPapers->Enable(   is_loaded );
+}
+
+void Dialog_Main::btnXapianLoadPapers_OnButtonClick(wxCommandEvent&)
+{
+    Dialog_Waiting &dlg = *new Dialog_Waiting(nullptr, "Loading Papers. . .");
+    dlg.m_gauge->SetRange(100);
+    //dlg.m_gauge->Hide();
+
+    std::atomic_bool is_loaded{false};
+
+    std::jthread mythread([&dlg,&is_loaded]
+      {
+          try
+          {
+              g_seman.Init( [&dlg](unsigned const n, unsigned const total)
+                {
+                    dlg.CallAfter( &Dialog_Waiting::CallAfter_SetProgress, n, total );
+                });
+
+              is_loaded = true;
+          }
+          catch(std::exception const &e)
+          {
+              std::cout << "what = " << e.what() << std::endl;
+          }
+          catch(char const *const what)
+          {
+              std::cout << "what = " << what << std::endl;
+          }
+          catch(...) { std::cout << "===== exception\n"; }
+
+          dlg.CallAfter( &Dialog_Waiting::CallAfter_Destroy );
+      });
+
+    dlg.ShowModal();
+
+    this->btnXapianLoadPapers  ->Enable( ! is_loaded );
+    //this->btnUnloadPapers->Enable(   is_loaded );
 }
 
 
