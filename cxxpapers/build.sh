@@ -9,7 +9,7 @@ if [ ! -d ../build ]; then
     cd -
 fi
 
-g++ -o tokenizer -x c++ tokenizer.cpp.STANDALONE -x none \
+g++ -o tokenizer -x c++ tokenizer.cpp.STANDALONE common.cpp.STANDALONE -x none \
     -std=c++23 \
     -static-libstdc++ -static-libgcc           \
     -I/usr/include/poppler/cpp                 \
