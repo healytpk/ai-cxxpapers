@@ -9,6 +9,14 @@ if [ ! -d ../build ]; then
     cd -
 fi
 
+g++ -o tree_maker -x c++ tree_maker.cpp.STANDALONE -x none \
+    -std=c++23 \
+    -static-libstdc++ -static-libgcc
+
+echo "Libraries needed by 'tree_maker': "
+readelf -a ./tree_maker | grep "(NEEDED)"
+./tree_maker > paper_tree_contents.hpp
+
 g++ -o tokenizer -x c++ tokenizer.cpp.STANDALONE common.cpp.STANDALONE -x none \
     -std=c++23 \
     -static-libstdc++ -static-libgcc           \

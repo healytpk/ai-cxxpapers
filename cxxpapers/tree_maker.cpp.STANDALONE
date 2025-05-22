@@ -1,0 +1,74 @@
+#include <cstdlib>                  // EXIT_FAILURE
+#include <filesystem>                // directory_iterator, path
+#include <iostream>
+#include <map>                        // map
+#include <regex>                      // regex, smatch
+#include <string>                     // string
+#include <set>                        // set
+
+namespace fs = std::filesystem;
+
+// Define the PaperTree structure
+using PaperTree = std::map<unsigned, std::set<unsigned>>;
+
+int main(void)
+{
+    // Path to the directory containing the .tokens files
+    std::string const path = "./paperfiles/papers";
+
+    // Regex pattern to match files in the form "PxxxxRx.tokens" or "PxxxxRxx.tokens"
+    std::regex const pattern(R"(p(\d+)r(\d+)\.tokens)", std::regex::icase);
+
+    // PaperTree to store paper numbers and their corresponding revision numbers
+    PaperTree papers;
+
+    // Iterate through all files in the specified directory
+    for ( auto const &entry : fs::directory_iterator(path) )
+    {
+        auto const &filename = entry.path().filename().string();
+
+        // Check if the file ends with ".tokens" and matches the pattern
+        if ( std::regex_match(filename, pattern) )
+        {
+            std::smatch match;
+            if ( std::regex_search(filename, match, pattern) )
+            {
+                // Extract the paper number and revision number
+                unsigned const paper_number = std::stoul(match[1].str());
+                unsigned const revision_number = std::stoul(match[2].str());
+
+                // Store the revision number under the corresponding paper number
+                auto [ iterator, is_new ] =  papers[paper_number].insert(revision_number);
+                if ( false == is_new )
+                {
+                    std::cout << " -- DUPLICATE PAPER NUMBER --\n";
+                    std::abort();
+                }
+            }
+        }
+    }
+
+    // Print out the PaperTree structure in the desired format
+    std::cout << "{\n";
+    for ( auto const &entry : papers )
+    {
+        std::cout << "    { ";
+
+        if ( entry.first <   10u ) std::cout << ' ';
+        if ( entry.first <  100u ) std::cout << ' ';
+        if ( entry.first < 1000u ) std::cout << ' ';
+
+        std::cout << entry.first << "u, { ";
+
+        auto rev_it = entry.second.begin();
+        for ( auto const &e : entry.second )
+        {
+            std::cout << e << "u, ";
+        }
+
+        std::cout << "} },\n";
+    }
+    std::cout << "};\n";
+
+    return EXIT_SUCCESS;
+}

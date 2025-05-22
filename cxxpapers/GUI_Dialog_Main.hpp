@@ -13,6 +13,7 @@ public:
     void btnLoadPapers_OnButtonClick(wxCommandEvent&) override;
     void btnXapianLoadPapers_OnButtonClick(wxCommandEvent&) override;
     void btnWhittleDownPapers_OnButtonClick(wxCommandEvent&) override;
+    void PaperTree_OnSelChanged(wxTreeEvent&) override;
 };
 
 extern Dialog_Main *g_p_dlgmain;

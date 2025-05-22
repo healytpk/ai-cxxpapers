@@ -13,6 +13,7 @@
 #include "ai.hpp"
 #include "paperman.hpp"
 #include "semantic.hpp"
+#include "papertree.hpp"
 
 Dialog_Main *g_p_dlgmain = nullptr;
 
@@ -59,9 +60,40 @@ public:
 
 IMPLEMENT_APP(App_CxxPapers);  // This creates the "main" function
 
+inline char const *PaperString(unsigned const num)
+{
+    static thread_local char s[] = "pxxxx";
+
+    s[1] = '0' + num / 1000u % 10u;
+    s[2] = '0' + num /  100u % 10u;
+    s[3] = '0' + num /   10u % 10u;
+    s[4] = '0' + num /    1u % 10u;
+
+    return s;
+}
+
 Dialog_Main::Dialog_Main(wxWindow *const parent) : Dialog_Main__Auto_Base_Class(parent)
 {
-    /* Nothing to do in here */
+    wxTreeItemId const tii_root = this->treeAllPapers->AddRoot("Root Node");
+
+    for ( auto &e : g_map_papers )
+    {
+        //auto [ &paper, &set_revs ] = root;
+        auto &papernum = e.first;
+        auto &set_revs = e.second;
+
+        wxTreeItemId const tii_papernum = this->treeAllPapers->AppendItem( tii_root, PaperString(papernum) );
+
+        for ( unsigned rev : set_revs )
+        {
+            wxTreeItemId const tii_rev = this->treeAllPapers->AppendItem( tii_papernum, "r" + wxString(std::to_string(rev)) );
+            this->treeAllPapers->Collapse(tii_rev);
+        }
+
+        this->treeAllPapers->Collapse(tii_papernum);
+    }
+
+    this->treeAllPapers->Expand(tii_root);
 }
 
 void Dialog_Main::OnClose(wxCloseEvent& event)
@@ -194,4 +226,30 @@ void Dialog_Main::btnXapianLoadPapers_OnButtonClick(wxCommandEvent&)
     //this->btnUnloadPapers->Enable(   is_loaded );
 }
 
+void Dialog_Main::PaperTree_OnSelChanged(wxTreeEvent &event)
+{
+    wxTreeItemId const selectedItem = event.GetItem();
+    wxString const itemText = this->treeAllPapers->GetItemText(selectedItem);
+    wxString htmlPath;
+    if ( itemText.StartsWith('p') )
+    {
+        wxTreeItemId const lastChild = this->treeAllPapers->GetLastChild(selectedItem);
+        wxString const lastChildText = this->treeAllPapers->GetItemText(lastChild);
+        htmlPath = "./paperfiles/papers/" + itemText + lastChildText + ".html";
+    }
+    else
+    {
+        wxTreeItemId const parent = this->treeAllPapers->GetItemParent(selectedItem);
+        wxString parentText = this->treeAllPapers->GetItemText(parent);
+        htmlPath = "./paperfiles/papers/" + parentText + itemText + ".html";
+    }
 
+    if ( false == wxFileExists(htmlPath) )
+    {
+        this->htmlPaper->SetPage("<html><body><h1>Hello, wxHtmlWindow!</h1>"
+                                 "<p>This is an example of loading HTML using SetPage().</p></body></html>");
+        return;
+    }
+
+    this->htmlPaper->LoadPage(htmlPath);
+}

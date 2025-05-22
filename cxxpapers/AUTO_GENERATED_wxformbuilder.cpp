@@ -17,6 +17,44 @@ Dialog_Main__Auto_Base_Class::Dialog_Main__Auto_Base_Class( wxWindow* parent, wx
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
 
 	m_notebook1 = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	panelBrowse = new wxPanel( m_notebook1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer8;
+	bSizer8 = new wxBoxSizer( wxHORIZONTAL );
+
+	treeAllPapers = new wxTreeCtrl( panelBrowse, wxID_ANY, wxDefaultPosition, wxSize( 200,-1 ), wxTR_DEFAULT_STYLE );
+	bSizer8->Add( treeAllPapers, 0, wxALL|wxEXPAND, 5 );
+
+	htmlPaper = new wxHtmlWindow( panelBrowse, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHW_SCROLLBAR_AUTO );
+	bSizer8->Add( htmlPaper, 1, wxALL|wxEXPAND, 5 );
+
+
+	panelBrowse->SetSizer( bSizer8 );
+	panelBrowse->Layout();
+	bSizer8->Fit( panelBrowse );
+	m_notebook1->AddPage( panelBrowse, _("Browse All Papers"), true );
+	panelXapian = new wxPanel( m_notebook1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer61;
+	bSizer61 = new wxBoxSizer( wxVERTICAL );
+
+	wxBoxSizer* bSizer41;
+	bSizer41 = new wxBoxSizer( wxHORIZONTAL );
+
+	btnXapianLoadPapers = new wxButton( panelXapian, wxID_ANY, _("Load Papers"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer41->Add( btnXapianLoadPapers, 0, wxALL, 5 );
+
+	btnUnloadPapers1 = new wxButton( panelXapian, wxID_ANY, _("Unload Papers"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnUnloadPapers1->Enable( false );
+
+	bSizer41->Add( btnUnloadPapers1, 0, wxALL, 5 );
+
+
+	bSizer61->Add( bSizer41, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
+
+
+	panelXapian->SetSizer( bSizer61 );
+	panelXapian->Layout();
+	bSizer61->Fit( panelXapian );
+	m_notebook1->AddPage( panelXapian, _("Xapian"), false );
 	panelAI = new wxPanel( m_notebook1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer3;
 	bSizer3 = new wxBoxSizer( wxVERTICAL );
@@ -98,30 +136,7 @@ Dialog_Main__Auto_Base_Class::Dialog_Main__Auto_Base_Class( wxWindow* parent, wx
 	panelAI->SetSizer( bSizer3 );
 	panelAI->Layout();
 	bSizer3->Fit( panelAI );
-	m_notebook1->AddPage( panelAI, _("AI"), true );
-	panelXapian = new wxPanel( m_notebook1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxBoxSizer* bSizer61;
-	bSizer61 = new wxBoxSizer( wxVERTICAL );
-
-	wxBoxSizer* bSizer41;
-	bSizer41 = new wxBoxSizer( wxHORIZONTAL );
-
-	btnXapianLoadPapers = new wxButton( panelXapian, wxID_ANY, _("Load Papers"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer41->Add( btnXapianLoadPapers, 0, wxALL, 5 );
-
-	btnUnloadPapers1 = new wxButton( panelXapian, wxID_ANY, _("Unload Papers"), wxDefaultPosition, wxDefaultSize, 0 );
-	btnUnloadPapers1->Enable( false );
-
-	bSizer41->Add( btnUnloadPapers1, 0, wxALL, 5 );
-
-
-	bSizer61->Add( bSizer41, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
-
-
-	panelXapian->SetSizer( bSizer61 );
-	panelXapian->Layout();
-	bSizer61->Fit( panelXapian );
-	m_notebook1->AddPage( panelXapian, _("Xapian"), false );
+	m_notebook1->AddPage( panelAI, _("AI"), false );
 
 	bSizer1->Add( m_notebook1, 1, wxEXPAND | wxALL, 5 );
 
@@ -133,12 +148,13 @@ Dialog_Main__Auto_Base_Class::Dialog_Main__Auto_Base_Class( wxWindow* parent, wx
 
 	// Connect Events
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( Dialog_Main__Auto_Base_Class::OnClose ) );
+	treeAllPapers->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( Dialog_Main__Auto_Base_Class::PaperTree_OnSelChanged ), NULL, this );
+	btnXapianLoadPapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnXapianLoadPapers_OnButtonClick ), NULL, this );
 	btnLoadModel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnLoadModel_OnButtonClick ), NULL, this );
 	btnUnloadModel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnUnloadModel_OnButtonClick ), NULL, this );
 	btnLoadPapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnLoadPapers_OnButtonClick ), NULL, this );
 	btnWhittleDownPapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnWhittleDownPapers_OnButtonClick ), NULL, this );
 	btnAnalysePapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnAnalysePapers_OnButtonClick ), NULL, this );
-	btnXapianLoadPapers->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Dialog_Main__Auto_Base_Class::btnXapianLoadPapers_OnButtonClick ), NULL, this );
 }
 
 Dialog_Main__Auto_Base_Class::~Dialog_Main__Auto_Base_Class()
