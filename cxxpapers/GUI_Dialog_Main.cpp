@@ -11,9 +11,12 @@
 
 #include "GUI_Dialog_Waiting.hpp"
 #include "ai.hpp"
+#include "embedded_archive.hpp"
 #include "paperman.hpp"
-#include "semantic.hpp"
 #include "papertree.hpp"
+#include "semantic.hpp"
+
+using std::string;
 
 Dialog_Main *g_p_dlgmain = nullptr;
 
@@ -228,6 +231,7 @@ void Dialog_Main::btnXapianLoadPapers_OnButtonClick(wxCommandEvent&)
 
 void Dialog_Main::PaperTree_OnSelChanged(wxTreeEvent &event)
 {
+    std::cout << "Entered OnSelChanged --------------------\n";
     wxTreeItemId const selectedItem = event.GetItem();
     wxString const itemText = this->treeAllPapers->GetItemText(selectedItem);
     wxString htmlPath;
@@ -235,21 +239,26 @@ void Dialog_Main::PaperTree_OnSelChanged(wxTreeEvent &event)
     {
         wxTreeItemId const lastChild = this->treeAllPapers->GetLastChild(selectedItem);
         wxString const lastChildText = this->treeAllPapers->GetItemText(lastChild);
-        htmlPath = "./paperfiles/papers/" + itemText + lastChildText + ".html";
+        htmlPath = itemText + lastChildText + ".html";
     }
     else
     {
         wxTreeItemId const parent = this->treeAllPapers->GetItemParent(selectedItem);
         wxString parentText = this->treeAllPapers->GetItemText(parent);
-        htmlPath = "./paperfiles/papers/" + parentText + itemText + ".html";
+        htmlPath = parentText + itemText + ".html";
     }
+    std::cout << "htmlPath = " << htmlPath.ToStdString() << " --------------------\n";
+    std::cout << "About to call 'GetFile'\n";
+    string html = ArchiveGetFile( htmlPath.ToStdString().c_str() );
+    std::cout << "Returned from 'GetFile'\n";
 
-    if ( false == wxFileExists(htmlPath) )
+    std::cout << "Length of string returned from GetFile: " << html.size() << std::endl;
+
+    if ( html.empty() )
     {
-        this->htmlPaper->SetPage("<html><body><h1>Hello, wxHtmlWindow!</h1>"
-                                 "<p>This is an example of loading HTML using SetPage().</p></body></html>");
-        return;
+        html = "<html><body><h1>Hello, wxHtmlWindow!</h1>"
+               "<p>This is an example of loading HTML using SetPage().</p></body></html>";
     }
 
-    this->htmlPaper->LoadPage(htmlPath);
+    this->htmlPaper->SetPage(html);
 }

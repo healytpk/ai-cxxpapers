@@ -38,6 +38,8 @@ g++ -o prog *.cpp                              \
     ../build/ggml/src/libggml.a                \
     ../build/ggml/src/libggml-cpu.a            \
     ../build/ggml/src/libggml-base.a           \
+    /usr/lib/x86_64-linux-gnu/libarchive.a     \
+    /usr/lib/x86_64-linux-gnu/liblzma.a        \
     /usr/lib/gcc/x86_64-linux-gnu/13/libgomp.a \
     -lxapian
 
